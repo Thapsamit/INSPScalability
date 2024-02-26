@@ -80,3 +80,13 @@ const joinRoomPreviewSocketHandler = async (data, callback, socket, io) => {
 Each server instance maintains its own state of connected clients and rooms, which is sufficient for handling local operations and interactions.
 
 However, to ensure that the state is consistent across all server instances and that clients connected to different server instances can communicate seamlessly, you're using Redis as the adapter for Socket.IO. Redis acts as a centralized message broker, facilitating communication and synchronization of state between different server instances.
+
+## Does single server setup is correct and how to do inter server communication ?
+
+- Local Management: Each server instance manages its own local state, including details about connected peers, rooms, and any communication specific to those peers. This allows for efficient handling of local operations without the need to constantly synchronize with other server instances.
+
+- Inter-Server Communication via Redis: When an event occurs that requires synchronization across server instances, such as a new peer joining a room, the relevant information is published to a Redis channel. Other server instances are subscribed to this channel and receive notifications about the event.
+
+- Synchronization: Upon receiving the notification from Redis, each server instance updates its own local state accordingly. This ensures that all server instances are aware of the event and can take appropriate actions, such as updating their own lists of connected peers.
+
+By following this approach, you achieve a balance between local efficiency and global consistency. Server instances only need to communicate with Redis for events that require synchronization, while still maintaining fast and efficient local operations for most tasks.
