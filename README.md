@@ -107,3 +107,12 @@ In summary:
 
 Each RoomManager instance maintains its own local peers list for efficiency and independence.
 Inter-server communication and synchronization are handled through Redis or a similar mechanism for scenarios that require global visibility or coordination across server instances.
+
+
+## How to get fresh data about the room when any client get connected first to any server?
+
+When a new peer joins a room on Server 2 and receives the updated information from Redis, they are now aware of the other peers in the room, even if those peers are connected to different servers.
+
+If a socket.emit('newPeerJoined') event is triggered on Server 2 after the new peer joins, it will be emitted to all connected clients on Server 2, including the newly joined peer, because socket.emit sends the event to all connected clients on that particular server instance.
+
+In summary, at the initial connection or when updates occur (such as a new peer joining), clients need to get fresh data from Redis to ensure they have the most up-to-date information about the room and its peers. Subsequent events or communications, such as socket.emit events, will then be handled locally within each server instance.
