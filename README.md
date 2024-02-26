@@ -75,6 +75,7 @@ const joinRoomPreviewSocketHandler = async (data, callback, socket, io) => {
 ```
 
 
+## Global variables approach correct ?
 
 Each server instance maintains its own state of connected clients and rooms, which is sufficient for handling local operations and interactions.
 
