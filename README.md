@@ -73,3 +73,9 @@ const joinRoomPreviewSocketHandler = async (data, callback, socket, io) => {
 
 
 ```
+
+
+
+Each server instance maintains its own state of connected clients and rooms, which is sufficient for handling local operations and interactions.
+
+However, to ensure that the state is consistent across all server instances and that clients connected to different server instances can communicate seamlessly, you're using Redis as the adapter for Socket.IO. Redis acts as a centralized message broker, facilitating communication and synchronization of state between different server instances.
