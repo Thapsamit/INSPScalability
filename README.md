@@ -90,3 +90,20 @@ However, to ensure that the state is consistent across all server instances and 
 - Synchronization: Upon receiving the notification from Redis, each server instance updates its own local state accordingly. This ensures that all server instances are aware of the event and can take appropriate actions, such as updating their own lists of connected peers.
 
 By following this approach, you achieve a balance between local efficiency and global consistency. Server instances only need to communicate with Redis for events that require synchronization, while still maintaining fast and efficient local operations for most tasks.
+
+
+
+
+## DOes local peer list within RoomManager need to hold other peers from other server
+
+
+In a distributed system where you have multiple server instances managing rooms and peers, it's generally a good practice to have each server instance maintain its own local state of connected peers. This means that the RoomManager instance on each server only maintains information about the peers connected to that specific server instance.
+
+When a new peer joins a room, it's typically added to the local peers list of the RoomManager instance where it connected. This ensures that each server instance operates independently and efficiently without constantly synchronizing state with other instances for every peer connection.
+
+However, for scenarios where you need global visibility of peer connections across all server instances, such as broadcasting messages to all peers in a room regardless of which server they are connected to, you would use a mechanism like Redis pub/sub for inter-server communication and synchronization.
+
+In summary:
+
+Each RoomManager instance maintains its own local peers list for efficiency and independence.
+Inter-server communication and synchronization are handled through Redis or a similar mechanism for scenarios that require global visibility or coordination across server instances.
