@@ -170,4 +170,56 @@ const peersInRoom = await getPeersInRoom(roomId);
 console.log(peersInRoom);
 ```
 
+## How to use redis 
 
+```js
+const redis = require('redis');
+const { promisify } = require('util');
+
+// Create a Redis client
+const redisClient = redis.createClient();
+
+// Promisify Redis commands for easier usage
+const hsetAsync = promisify(redisClient.hset).bind(redisClient);
+const hgetAsync = promisify(redisClient.hget).bind(redisClient);
+const hgetAllAsync = promisify(redisClient.hgetall).bind(redisClient);
+
+// Update the list of peers in Redis
+const updatePeersInRoom = async (roomId, peerId, peerDetails) => {
+  try {
+    // Add or update the peer's details in the hash for the room
+    await hsetAsync(`room:${roomId}:peers`, peerId, JSON.stringify(peerDetails));
+    console.log(`Peer ${peerId} added/updated in room ${roomId}.`);
+  } catch (error) {
+    console.error(`Error updating peers in room ${roomId}:`, error);
+  }
+};
+
+// Retrieve the list of peers in a room from Redis
+const getPeersInRoom = async (roomId) => {
+  try {
+    // Get all peer details for the room from the hash
+    const peerDetails = await hgetAllAsync(`room:${roomId}:peers`);
+    // Convert the peer details to an array of objects
+    const peers = Object.values(peerDetails).map(JSON.parse);
+    return peers;
+  } catch (error) {
+    console.error(`Error getting peers in room ${roomId}:`, error);
+    return [];
+  }
+};
+
+// Usage
+const roomId = 'exampleRoomId';
+const newPeerId = 'examplePeerId';
+const newPeerDetails = {
+  routerId: 'exampleRouterId',
+  peerName: 'Example Peer',
+};
+
+updatePeersInRoom(roomId, newPeerId, newPeerDetails);
+const peersInRoom = await getPeersInRoom(roomId);
+console.log(peersInRoom);
+
+
+```
