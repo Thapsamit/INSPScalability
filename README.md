@@ -94,7 +94,7 @@ By following this approach, you achieve a balance between local efficiency and g
 
 
 
-## DOes local peer list within RoomManager need to hold other peers from other server
+## Does local peer list within RoomManager need to hold other peers from other server
 
 
 In a distributed system where you have multiple server instances managing rooms and peers, it's generally a good practice to have each server instance maintain its own local state of connected peers. This means that the RoomManager instance on each server only maintains information about the peers connected to that specific server instance.
