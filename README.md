@@ -116,3 +116,58 @@ When a new peer joins a room on Server 2 and receives the updated information fr
 If a socket.emit('newPeerJoined') event is triggered on Server 2 after the new peer joins, it will be emitted to all connected clients on Server 2, including the newly joined peer, because socket.emit sends the event to all connected clients on that particular server instance.
 
 In summary, at the initial connection or when updates occur (such as a new peer joining), clients need to get fresh data from Redis to ensure they have the most up-to-date information about the room and its peers. Subsequent events or communications, such as socket.emit events, will then be handled locally within each server instance.
+
+
+
+## How to use different redis function 
+```js
+const redis = require('redis');
+const { promisify } = require('util');
+
+// Create a Redis client
+const redisClient = redis.createClient();
+
+// Promisify Redis commands for easier usage
+const hsetAsync = promisify(redisClient.hset).bind(redisClient);
+const hgetAsync = promisify(redisClient.hget).bind(redisClient);
+const hgetAllAsync = promisify(redisClient.hgetall).bind(redisClient);
+
+// Update the list of peers in Redis
+const updatePeersInRoom = async (roomId, peerId, peerDetails) => {
+  try {
+    // Add or update the peer's details in the hash for the room
+    await hsetAsync(`room:${roomId}:peers`, peerId, JSON.stringify(peerDetails));
+    console.log(`Peer ${peerId} added/updated in room ${roomId}.`);
+  } catch (error) {
+    console.error(`Error updating peers in room ${roomId}:`, error);
+  }
+};
+
+// Retrieve the list of peers in a room from Redis
+const getPeersInRoom = async (roomId) => {
+  try {
+    // Get all peer details for the room from the hash
+    const peerDetails = await hgetAllAsync(`room:${roomId}:peers`);
+    // Convert the peer details to an array of objects
+    const peers = Object.values(peerDetails).map(JSON.parse);
+    return peers;
+  } catch (error) {
+    console.error(`Error getting peers in room ${roomId}:`, error);
+    return [];
+  }
+};
+
+// Usage
+const roomId = 'exampleRoomId';
+const newPeerId = 'examplePeerId';
+const newPeerDetails = {
+  routerId: 'exampleRouterId',
+  peerName: 'Example Peer',
+};
+
+updatePeersInRoom(roomId, newPeerId, newPeerDetails);
+const peersInRoom = await getPeersInRoom(roomId);
+console.log(peersInRoom);
+```
+
+
