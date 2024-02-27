@@ -288,6 +288,115 @@ function handleErrorsAndCleanup() {
 
 ```
 
+## How to use inter server stream exchange 
+SERVER - 1
+```js
+const mediasoup = require('mediasoup');
+const Redis = require('ioredis');
 
+// Create a Redis client for signaling
+const redis = new Redis();
+
+// Function to create a PipeTransport for a router
+async function createPipeTransport(router) {
+  // Create a PipeTransport for the router
+  const pipeTransport = await router.createPipeTransport({
+    listenIp: '0.0.0.0', // Listen on all IPs
+  });
+
+  // Store the PipeTransport ID in Redis for signaling
+  await redis.set(`router:${router.id}:pipeTransportId`, pipeTransport.id);
+
+  // Store the PipeTransport IP and port in Redis for signaling
+  await redis.set(`router:${router.id}:pipeTransportIp`, 'server2_ip'); // Assuming server2 IP
+  await redis.set(`router:${router.id}:pipeTransportPort`, 'server2_port'); // Assuming server2 port
+
+  return pipeTransport;
+}
+
+// Function to create a producer
+async function createProducer(pipeTransport, kind) {
+  // Create a producer on the PipeTransport
+  const producer = await pipeTransport.produce({
+    kind,
+    /* Other producer options */
+  });
+
+  return producer;
+}
+
+// Example usage for Server 1
+(async () => {
+  // Connect to mediasoup worker
+  const worker = await mediasoup.createWorker();
+
+  // Create router
+  const router = await worker.createRouter();
+
+  // Create PipeTransport for the router
+  const pipeTransport = await createPipeTransport(router);
+
+  // Create producer on the PipeTransport
+  const producer = await createProducer(pipeTransport, 'audio');
+})();
+
+```
+
+
+SERVER - 2
+
+```js
+const mediasoup = require('mediasoup');
+const Redis = require('ioredis');
+
+// Create a Redis client for signaling
+const redis = new Redis();
+
+// Function to create a PipeTransport for a router
+async function createPipeTransport(router) {
+  // Create a PipeTransport for the router
+  const pipeTransport = await router.createPipeTransport({
+    listenIp: '0.0.0.0', // Listen on all IPs
+  });
+
+  // Store the PipeTransport ID in Redis for signaling
+  await redis.set(`router:${router.id}:pipeTransportId`, pipeTransport.id);
+
+  // Store the PipeTransport IP and port in Redis for signaling
+  await redis.set(`router:${router.id}:pipeTransportIp`, 'server1_ip'); // Assuming server1 IP
+  await redis.set(`router:${router.id}:pipeTransportPort`, 'server1_port'); // Assuming server1 port
+
+  return pipeTransport;
+}
+
+// Function to create a consumer
+async function createConsumer(pipeTransport, producerId) {
+  // Create a consumer on the PipeTransport
+  const consumer = await pipeTransport.consume({
+    producerId,
+  });
+
+  return consumer;
+}
+
+// Example usage for Server 2
+(async () => {
+  // Connect to mediasoup worker
+  const worker = await mediasoup.createWorker();
+
+  // Create router
+  const router = await worker.createRouter();
+
+  // Create PipeTransport for the router
+  const pipeTransport = await createPipeTransport(router);
+
+  // Retrieve the producerId from Redis for signaling
+  const producerId = await redis.get('producerId');
+
+  // Create consumer on the PipeTransport
+  const consumer = await createConsumer(pipeTransport, producerId);
+})();
+
+```
 
 
