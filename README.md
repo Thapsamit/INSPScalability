@@ -220,6 +220,74 @@ const newPeerDetails = {
 updatePeersInRoom(roomId, newPeerId, newPeerDetails);
 const peersInRoom = await getPeersInRoom(roomId);
 console.log(peersInRoom);
+```
 
+
+## How to distribute streams across server
+To distribute producer streams across multiple mediasoup servers using Redis as a signaling mechanism, you'll need to implement a custom solution that involves coordinating between the different servers. Here's a high-level overview of how you can achieve this:
+
+- Establish a Redis Pub/Sub Channel: Set up a Redis Pub/Sub channel to allow communication between the different mediasoup servers. Each server will subscribe to this channel to receive messages.
+
+- Publish Producer Information: When a producer is created on one server, publish information about this producer (such as its ID and transport parameters) to the Redis channel.
+
+- Subscribe and Consume Messages: Each mediasoup server will subscribe to the Redis channel and consume messages about producers created on other servers. When a message about a producer is received, the server will create a consumer for that producer.
+
+- Handling Consumer Creation: When a server receives information about a producer from another server, it will use that information to create a consumer on its end. This consumer will consume the stream produced by the producer.
+
+- Error Handling and Cleanup: Implement error handling and cleanup logic to handle scenarios like server disconnects, failures, or producer/consumer expiration.
+
+Here's a simplified example of how you might implement this in Node.js using mediasoup and ioredis for Redis communication:
+
+
+```js
+
+const { Worker } = require('mediasoup');
+const Redis = require('ioredis');
+
+const redis = new Redis();
+
+// Create a mediasoup worker
+const worker = await Worker.createWorker();
+
+// Subscribe to the Redis channel
+redis.subscribe('mediasoup_producers');
+
+// Handle messages received from the Redis channel
+redis.on('message', async (channel, message) => {
+  // Parse the message
+  const { roomId, producerId, transportParameters } = JSON.parse(message);
+
+  // Create a consumer for the received producer
+  const consumer = await createConsumer(roomId, producerId, transportParameters);
+
+  // Handle consumer creation
+  // For example, add the consumer to a map for later reference
+});
+
+// Function to create a consumer for a producer
+async function createConsumer(roomId, producerId, transportParameters) {
+  // Lookup the room and transport based on roomId
+  // Use roomId to determine which server instance should handle this consumer
+  const room = getRoomFromId(roomId);
+  const transport = getTransportFromParameters(transportParameters);
+
+  // Create a consumer using the provided transport
+  const consumer = await room.createConsumer({
+    producerId,
+    transport,
+  });
+
+  return consumer;
+}
+
+// Function to handle cleanup and error handling
+function handleErrorsAndCleanup() {
+  // Implement logic to handle errors and cleanup resources
+  // For example, remove consumers from the map on disconnect
+}
 
 ```
+
+
+
+
